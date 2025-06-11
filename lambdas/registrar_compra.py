@@ -1,13 +1,16 @@
-import boto3, json, uuid
+import boto3
+import json
+import uuid
+import os
 from datetime import datetime
 from middleware.validarTokenAcceso import validar_token
-import os
 
 dynamodb = boto3.resource('dynamodb')
 productos_table = dynamodb.Table(os.environ['PRODUCTOS_TABLE'])
 compras_table = dynamodb.Table(os.environ['COMPRAS_TABLE'])
 
 def lambda_handler(event, context):
+    # Validar token
     token_validacion = validar_token(event['headers'])
     if not token_validacion['ok']:
         return token_validacion['respuesta']
@@ -67,7 +70,6 @@ def lambda_handler(event, context):
     compra = {
         'compra_id': str(uuid.uuid4()),
         'user_id': datos_token['user_id'],
-        'tenant_id': datos_token['tenant_id'],
         'productos': productos_confirmados,
         'fecha': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     }
