@@ -9,6 +9,7 @@ provider:
   environment:
     COMPRAS_TABLE: ${sls:stage}-t_MS3_compras
     TOKENS_TABLE: ${sls:stage}-t_MS1_tokens_acceso
+    PRODUCTOS_TABLE: ${sls:stage}-t_MS2_productos
   iam:
     role: arn:aws:iam::748213590633:role/LabRole
 
