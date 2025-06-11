@@ -1,0 +1,44 @@
+org: ivanrodriguezperez
+service: MS3-api-compras
+
+provider:
+  name: aws
+  runtime: python3.12
+  memorySize: 1024
+  timeout: 30
+  environment:
+    COMPRAS_TABLE: ${sls:stage}-t_MS3_compras
+    TOKENS_TABLE: ${sls:stage}-t_MS1_tokens_acceso
+  iam:
+    role: arn:aws:iam::748213590633:role/LabRole
+
+functions:
+  registrarCompra:
+    handler: lambdas/registrar_compra.lambda_handler
+    events:
+      - http:
+          path: compras/registrar
+          method: post
+          cors: true
+
+  listarCompras:
+    handler: lambdas/listar_compras.lambda_handler
+    events:
+      - http:
+          path: compras/listar
+          method: get
+          cors: true
+
+resources:
+  Resources:
+    ComprasTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.COMPRAS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: compra_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: compra_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
