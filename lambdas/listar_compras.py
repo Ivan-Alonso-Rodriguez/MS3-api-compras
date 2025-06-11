@@ -1,7 +1,15 @@
 import boto3
 import json
 import os
+import decimal
 from middleware.validarTokenAcceso import validar_token
+
+# Custom encoder para manejar Decimals
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, o):
+        if isinstance(o, decimal.Decimal):
+            return float(o)
+        return super(DecimalEncoder, self).default(o)
 
 def lambda_handler(event, context):
     # Validar el token
@@ -22,5 +30,5 @@ def lambda_handler(event, context):
 
     return {
         'statusCode': 200,
-        'body': json.dumps(resultado.get('Items', []))
+        'body': json.dumps(resultado.get('Items', []), cls=DecimalEncoder)
     }
