@@ -1,0 +1,38 @@
+openapi: 3.0.0
+info:
+  title: API Compras - Proyecto Final
+  version: 1.0.0
+  description: API para registrar y listar compras realizadas por los usuarios autenticados
+
+paths:
+  /compras/crear:
+    post:
+      summary: Registrar una nueva compra
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [codigo, cantidad]
+              properties:
+                codigo:
+                  type: string
+                  description: Código del producto
+                cantidad:
+                  type: integer
+                  description: Cantidad comprada
+      responses:
+        '200':
+          description: Compra registrada exitosamente
+        '400':
+          description: Datos inválidos o token inválido
+
+  /compras/listar:
+    get:
+      summary: Listar compras del usuario autenticado
+      responses:
+        '200':
+          description: Lista de compras
+        '401':
+          description: Token inválido
