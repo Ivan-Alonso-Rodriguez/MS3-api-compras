@@ -1,38 +1,58 @@
-import boto3
-from datetime import datetime
+const AWS = require('aws-sdk');
+const dynamodb = new AWS.DynamoDB.DocumentClient();
 
-def validar_token(headers):
-    token = headers.get('x-auth-token')
-    if not token:
-        return {
-            'ok': False,
-            'respuesta': {
-                'statusCode': 401,
-                'body': '{"mensaje": "Token no proporcionado"}'
-            }
+module.exports.validarToken = async (headers) => {
+  const token = headers['x-auth-token'] || headers['authorization'] || headers['Authorization'];
+  if (!token) {
+    return {
+      ok: false,
+      respuesta: {
+        statusCode: 401,
+        body: JSON.stringify({ mensaje: 'Token no proporcionado' })
+      }
+    };
+  }
+
+  try {
+    const tableName = process.env.TOKENS_TABLE;
+
+    const res = await dynamodb.get({
+      TableName: tableName,
+      Key: { token }
+    }).promise();
+
+    if (!res.Item) {
+      return {
+        ok: false,
+        respuesta: {
+          statusCode: 403,
+          body: JSON.stringify({ mensaje: 'Token no existe' })
         }
+      };
+    }
 
-    tabla = boto3.resource('dynamodb').Table(headers.get('TOKENS_TABLE') or 'dev-t_MS1_tokens_acceso')
-    respuesta = tabla.get_item(Key={'token': token})
-
-    if 'Item' not in respuesta:
-        return {
-            'ok': False,
-            'respuesta': {
-                'statusCode': 403,
-                'body': '{"mensaje": "Token no existe"}'
-            }
+    const now = new Date().toISOString().replace('T', ' ').substring(0, 19);
+    if (now > res.Item.expires) {
+      return {
+        ok: false,
+        respuesta: {
+          statusCode: 403,
+          body: JSON.stringify({ mensaje: 'Token expirado' })
         }
+      };
+    }
 
-    datos = respuesta['Item']
-    ahora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    if ahora > datos['expires']:
-        return {
-            'ok': False,
-            'respuesta': {
-                'statusCode': 403,
-                'body': '{"mensaje": "Token expirado"}'
-            }
-        }
-
-    return {'ok': True, 'datos': datos}
+    return {
+      ok: true,
+      datos: res.Item // Incluye user_id, tenant_id, etc. si los guardaste
+    };
+  } catch (err) {
+    return {
+      ok: false,
+      respuesta: {
+        statusCode: 500,
+        body: JSON.stringify({ mensaje: 'Error al validar token', detalle: err.message })
+      }
+    };
+  }
+};
